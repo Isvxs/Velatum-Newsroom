@@ -4,8 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Velatum Newsroom</title>
+    
+    <script>
+        (async function() {
+            try {
+                const res = await fetch('status.json?t=' + Date.now());
+                if (res.ok) {
+                    const status = await res.json();
+                    if (status.isFixing === true) {
+                        // 使用 replace 替換歷史紀錄，讓瀏覽器「上一頁」按鈕失效，絕對回不到 index
+                        window.location.replace('fixing.html');
+                    }
+                }
+            } catch(e) {
+                console.log("Pre-render safety check bypassed.");
+            }
+        })();
+    </script>
+
     <style>
-        /* Load Fonts (Modify URL paths based on your actual assets) */
+        /* --- 載入完整字型家族：區別正常字、斜字與粗體字 --- */
+        @font-face {
+            font-family: 'BuilderSans';
+            src: url('BuilderSans-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'BuilderSans';
+            src: url('BuilderSans-Italic.otf') format('opentype');
+            font-weight: 400;
+            font-style: italic;
+        }
         @font-face {
             font-family: 'BuilderSans';
             src: url('BuilderSans-Medium-500.otf') format('opentype');
@@ -16,6 +46,12 @@
             font-family: 'BuilderSans';
             src: url('BuilderSans-SemiBold-600.otf') format('opentype');
             font-weight: 600;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'BuilderSans';
+            src: url('BuilderSans-Bold.otf') format('opentype');
+            font-weight: 700;
             font-style: normal;
         }
 
@@ -48,7 +84,7 @@
             background-color: var(--bg-main);
             color: var(--text-main);
             font-family: 'BuilderSans', -apple-system, BlinkMacSystemFont, sans-serif;
-            font-weight: 500;
+            font-weight: 400; /* 修改預設為 400 正常字體 */
             margin: 0;
             padding: 40px 20px 60px 20px;
             box-sizing: border-box;
@@ -58,6 +94,10 @@
             align-items: center;
             transition: background-color 0.4s var(--ease-premium), color 0.4s var(--ease-premium);
         }
+
+        /* 確保粗體與斜體在元件內正常繼承與渲染 */
+        strong, b { font-weight: 700; }
+        em, i { font-style: italic; }
 
         /* Top Header & Theme Switcher Setup */
         header {
@@ -478,19 +518,13 @@
             initTheme(); // Pre-paint layout layer
             $('ThemeBtn').onclick = toggleTheme;
 
+            // 二次兜底檢查 (若上方的同步腳本因極端慢網速未及時阻斷，此處將進行二次跳轉)
             try {
                 const statusRes = await fetch('status.json?t=' + Date.now());
                 if (statusRes.ok) {
                     const statusData = await statusRes.json();
-                    if (statusData.isFixing) {
-                        lod.innerText = "REDIRECTING TO MAINTENANCE...";
-                        document.querySelector('header h1').innerText = "SYSTEM MAINTENANCE";
-                        document.querySelector('.main-layout').style.opacity = '0';
-                        document.querySelector('.main-layout').style.transition = 'opacity 0.4s ease';
-                        
-                        setTimeout(() => {
-                            window.location.href = 'fixing.html';
-                        }, 1200);
+                    if (statusData.isFixing === true) {
+                        window.location.replace('fixing.html');
                         return; 
                     }
                 }
