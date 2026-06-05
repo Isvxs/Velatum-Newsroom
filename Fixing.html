@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Status | HevLog</title>
+    <style>
+        /* 載入字體 (請依實際路徑修改 url) */
+        @font-face {
+            font-family: 'BuilderSans';
+            src: url('BuilderSans-Medium-500.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'BuilderSans';
+            src: url('BuilderSans-SemiBold-600.otf') format('opentype');
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        /* 全域樣式：純白背景、純黑字體 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'BuilderSans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 500;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 40px 20px;
+        }
+
+        /* 頂部空區塊 */
+        .top-spacer {
+            height: 40px;
+        }
+
+        /* 中間主要內容區 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            gap: 30px;
+        }
+
+        /* 非均速六球旋轉載入器 */
+        .loader {
+            position: relative;
+            width: 40px; /* 縮小容器以配合小球 */
+            height: 40px;
+        }
+
+        .dot {
+            position: absolute;
+            width: 6px; /* 縮小小球尺寸 */
+            height: 6px; /* 縮小小球尺寸 */
+            background-color: #000000;
+            border-radius: 50%;
+            top: 0;
+            left: 17px; /* (Container width 40 - dot width 6) / 2 */
+            transform-origin: 3px 20px; /* 旋轉中心點設在容器正中央 */
+            /* 使用 cubic-bezier 讓轉動時快時慢 */
+            animation: custom-rotate 2s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+        }
+
+        /* 動態延遲，營造非均速視覺 */
+        .dot:nth-child(1) { animation-delay: 0s; }
+        .dot:nth-child(2) { animation-delay: -0.1s; }
+        .dot:nth-child(3) { animation-delay: -0.2s; }
+        .dot:nth-child(4) { animation-delay: -0.3s; }
+        .dot:nth-child(5) { animation-delay: -0.4s; }
+        .dot:nth-child(6) { animation-delay: -0.5s; }
+
+        /* 動態效果：從 0 度轉到 360 度 */
+        @keyframes custom-rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 提示文字 */
+        .status-text {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            text-align: center;
+            line-height: 1.4;
+            max-width: 600px;
+        }
+
+        /* 底部按鈕與倒數區 */
+        .bottom-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        /* 純黑白風格按鈕 */
+        .refresh-btn {
+            background-color: #000000;
+            color: #ffffff;
+            border: 1px solid #000000;
+            padding: 12px 32px;
+            font-family: 'BuilderSans', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            text-decoration: none;
+        }
+
+        .refresh-btn:hover {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        /* 底部小字 */
+        .countdown-text {
+            font-size: 13px;
+            color: #000000;
+            opacity: 0.8;
+            letter-spacing: 0.2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-spacer"></div>
+
+    <div class="main-content">
+        <div id="status-loader" class="loader">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <div id="status-text" class="status-text">Detecting system status, please wait...</div>
+    </div>
+
+    <div class="bottom-content">
+        <button id="action-btn" class="refresh-btn" onclick="refreshPage()">Refresh Page</button>
+        <div id="countdown-box" class="countdown-text">Automatically refresh page in <span id="timer">10</span>s.</div>
+    </div>
+
+    <script>
+        let timeLeft = 10;
+        let countdownInterval = null;
+        const timerElement = document.getElementById('timer');
+        const loader = document.getElementById('status-loader');
+        const statusText = document.getElementById('status-text');
+        const actionBtn = document.getElementById('action-btn');
+        const countdownBox = document.getElementById('countdown-box');
+
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        // 啟動/重設維護期間的 10 秒倒數計時
+        function startMaintenanceCountdown() {
+            clearInterval(countdownInterval);
+            timeLeft = 10;
+            timerElement.textContent = timeLeft;
+            countdownBox.innerHTML = `Automatically refresh page in <span id="timer">10</span>s.`;
+            
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    checkStatus(); // 倒數完畢再次異步偵測，不刷頁面減少閃爍
+                }
+            }, 1000);
+        }
+
+        // 啟動回到首頁的 3 秒倒數計時
+        function startRedirectCountdown() {
+            clearInterval(countdownInterval);
+            timeLeft = 3;
+            countdownBox.innerHTML = `Redirecting to home in <span id="timer">3</span>s.`;
+
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    window.location.href = 'index.html';
+                }
+            }, 1000);
+        }
+
+        async function checkStatus() {
+            try {
+                // 加上時間戳防快取
+                const res = await fetch('status.json?t=' + Date.now());
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+
+                if (data.isFixing) {
+                    // 【情況 1：維護中】
+                    loader.style.display = 'block';
+                    statusText.innerText = data.message || "This website is updating, Please stand by!";
+                    
+                    // 讓按鈕維持重新整理功能
+                    actionBtn.innerText = "Refresh Page";
+                    actionBtn.onclick = refreshPage;
+                    
+                    startMaintenanceCountdown();
+                } else {
+                    // 【情況 2：恢復正常】
+                    handleSystemOnline();
+                }
+            } catch (e) {
+                // 【情況 3：連線失敗或抓不到 json（比照舊版視為沒在維護，安全放行）】
+                handleSystemOnline();
+            }
+        }
+
+        // 處理系統上線、正常導回的邏輯
+        function handleSystemOnline() {
+            loader.style.display = 'none'; // 隱藏載入動畫
+            statusText.innerText = "All systems nominal. Server is online.";
+            
+            // 將底部按鈕改為手動回到首頁
+            actionBtn.innerText = "Go to Home";
+            actionBtn.onclick = function() {
+                window.location.href = 'index.html';
+            };
+            
+            startRedirectCountdown();
+        }
+
+        // 初始執行偵測
+        checkStatus();
+    </script>
+</body>
+</html>

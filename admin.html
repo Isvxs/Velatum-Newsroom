@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HevLog Admin | 後台管理系統</title>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #24292e;
+            --accent: #63adf7;
+            --danger: #d73a49;
+            --bg: #f6f8fa;
+            --card-bg: #ffffff;
+            --border: #e1e4e8;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: var(--primary);
+        }
+
+        .admin-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+        }
+
+        h2, h3 { border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
+
+        .section { margin-bottom: 30px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        /* 編輯器高度 */
+        #editor-container { height: 400px; margin-bottom: 20px; }
+
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-primary { background: var(--accent); color: white; width: 100%; font-size: 16px; }
+        .btn-secondary { background: #e1e4e8; color: var(--primary); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-dark { background: #333; color: white; }
+
+        /* 維護模式區塊專用樣式 */
+        .maintenance-box {
+            background: #fff9e6;
+            border: 1px solid #ffe58f;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 50px;
+        }
+
+        /* 文章管理清單 */
+        .post-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #status-display {
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+    <h2>🚀 HevLog 內容管理系統</h2>
+
+    <div class="section">
+        <label>GitHub Personal Access Token</label>
+        <input type="password" id="gh-token" placeholder="貼上具備 Repo 權限的 Token" onblur="loadPostList()">
+    </div>
+
+    <div class="section">
+        <label>文章標題</label>
+        <input type="text" id="post-title" placeholder="請輸入標題...">
+        
+        <label>文章分類</label>
+        <select id="cat-select" onchange="toggleCustomCat()">
+            <option value="遊戲開發">遊戲開發</option>
+            <option value="Discord伺服器開發">Discord伺服器開發</option>
+            <option value="others">自訂/其他</option>
+        </select>
+        <input type="text" id="custom-cat" placeholder="請輸入自訂分類名稱" style="display:none;">
+
+        <label>內文編輯</label>
+        <div id="editor-container"></div>
+        
+        <button class="btn-primary" id="publish-btn" onclick="publishPost()">發布文章到 GitHub</button>
+        <div id="status-display"></div>
+    </div>
+
+    <div class="maintenance-box">
+        <h3 style="color: #856404; border:none;">🚧 系統維護開關</h3>
+        <label>修補公告內容 (顯示於 Fixing.html)</label>
+        <textarea id="fix-message" placeholder="例如：正在升級資料庫，預計於 20:00 恢復運作。"></textarea>
+        <div class="btn-group">
+            <button class="btn-dark" onclick="setMaintenance(true)">開啟維護模式</button>
+            <button class="btn-secondary" onclick="setMaintenance(false)">關閉維護模式 (恢復正常)</button>
+        </div>
+    </div>
+
+    <div class="section" style="margin-top: 50px;">
+        <h3>📦 文章管理</h3>
+        <div class="btn-group" style="margin-bottom: 15px;">
+            <button class="btn-secondary" onclick="loadPostList()">重新整理列表</button>
+            <button class="btn-danger" onclick="batchDelete()">批量刪除所有文章</button>
+        </div>
+        <div id="post-list-container">輸入 Token 後將自動載入列表...</div>
+    </div>
+</div>
+
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<script>
+    const GITHUB_USER = 'Isvxs'; 
+    const GITHUB_REPO = 'HevBlog';
+
+    // 初始化編輯器
+    const quill = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, false] }],
+                ['bold', 'italic', 'underline', 'code-block'],
+                ['link', 'image'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['clean']
+            ]
+        }
+    });
+
+    function toggleCustomCat() {
+        document.getElementById('custom-cat').style.display = 
+            document.getElementById('cat-select').value === 'others' ? 'block' : 'none';
+    }
+
+    function showStatus(msg, isError) {
+        const el = document.getElementById('status-display');
+        el.innerText = msg;
+        el.style.display = 'block';
+        el.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
+        el.style.color = isError ? '#721c24' : '#155724';
+    }
+
+    // --- 功能：發布文章 ---
+    async function publishPost() {
+        const token = document.getElementById('gh-token').value;
+        const title = document.getElementById('post-title').value;
+        const category = document.getElementById('cat-select').value === 'others' ? 
+                         document.getElementById('custom-cat').value : document.getElementById('cat-select').value;
+        const content = quill.root.innerHTML;
+
+        if(!token || !title) return alert("請填寫 Token 與標題");
+
+        const postData = { title, category: category || '未分類', date: new Date().toISOString(), content };
+        const fileName = `post_${Date.now()}.json`;
+        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/posts/${fileName}`;
+
+        try {
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({
+                    message: `Create post: ${title}`,
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(postData))))
+                })
+            });
+            if(res.ok) {
+                showStatus("✅ 文章發布成功！", false);
+                quill.setContents([]);
+                document.getElementById('post-title').value = '';
+                loadPostList();
+            } else { showStatus("❌ 發布失敗，請檢查權限。", true); }
+        } catch(e) { showStatus("❌ 網路錯誤。", true); }
+    }
+
+    // --- 功能：維護模式 (status.json) ---
+    async function setMaintenance(isFixing) {
+        const token = document.getElementById('gh-token').value;
+        const message = document.getElementById('fix-message').value || "正在維修中...";
+        if(!token) return alert("請輸入 Token");
+
+        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/status.json`;
+        let sha = "";
+
+        try {
+            const check = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+            if(check.ok) { const d = await check.json(); sha = d.sha; }
+        } catch(e) {}
+
+        const statusData = { isFixing, message, updatedAt: new Date().toISOString() };
+        const res = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                message: isFixing ? "🔧 Enable Maintenance" : "✅ Disable Maintenance",
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(statusData)))),
+                sha: sha
+            })
+        });
+
+        if(res.ok) alert(isFixing ? "維護模式已開啟 (Fixing.html)" : "維護模式已關閉");
+        else alert("設定失敗");
+    }
+
+    // --- 功能：載入文章清單 ---
+    async function loadPostList() {
+        const token = document.getElementById('gh-token').value;
+        const container = document.getElementById('post-list-container');
+        if(!token) return;
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/posts`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const files = (await res.json()).filter(f => f.name.endsWith('.json')).reverse();
+            
+            container.innerHTML = files.map(f => `
+                <div class="post-list-item">
+                    <span>${f.name}</span>
+                    <button class="btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteSingle('${f.path}', '${f.sha}')">刪除</button>
+                </div>
+            `).join('') || "目前沒有任何文章。";
+        } catch(e) { container.innerHTML = "載入清單失敗。"; }
+    }
+
+    async function deleteSingle(path, sha) {
+        if(!confirm("確定刪除此文章？")) return;
+        const token = document.getElementById('gh-token').value;
+        await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${path}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ message: "Delete post", sha })
+        });
+        loadPostList();
+    }
+
+    async function batchDelete() {
+        const token = document.getElementById('gh-token').value;
+        if(!confirm("⚠️ 警告：這將刪除 posts 資料夾內的所有 JSON 文章！確定嗎？")) return;
+        
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/posts`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const files = await res.json();
+        
+        for(const file of files) {
+            if(file.name.endsWith('.json')) {
+                await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${file.path}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ message: "Batch delete", sha: file.sha })
+                });
+            }
+        }
+        alert("批量刪除完成");
+        loadPostList();
+    }
+</script>
+
+</body>
+</html>
