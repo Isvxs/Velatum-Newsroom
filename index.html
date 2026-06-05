@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HevLog Dev 日誌</title>
+    <title>Velatum Newsroom</title>
     <style>
-        /* 載入字體 (請依實際路徑修改 url) */
+        /* Load Fonts (Modify URL paths based on your actual assets) */
         @font-face {
             font-family: 'BuilderSans';
             src: url('BuilderSans-Medium-500.otf') format('opentype');
@@ -19,7 +19,7 @@
             font-style: normal;
         }
 
-        /* 全域樣式：極簡白底黑字風格 */
+        /* Global Variables: Premium Minimalist Styling */
         :root {
             --bg-main: #ffffff;
             --text-main: #000000;
@@ -43,7 +43,7 @@
             align-items: center;
         }
 
-        /* 頂部橫幅 */
+        /* Top Header */
         header {
             width: 100%;
             max-width: 1000px;
@@ -63,7 +63,7 @@
             opacity: 0.6;
         }
 
-        /* 搜尋區塊 */
+        /* Search Layout Container */
         .search-box {
             width: 100%;
             max-width: 1000px;
@@ -114,7 +114,7 @@
             box-shadow: inset 0 0 0 1px var(--border-black);
         }
 
-        /* 主要內容雙欄佈局 */
+        /* Core Layout Architecture */
         .main-layout {
             display: flex;
             width: 100%;
@@ -128,18 +128,18 @@
             display: flex;
             flex-direction: column;
             gap: 30px;
-            min-width: 0; /* 防止子元素撐開主流標籤 */
+            min-width: 0;
         }
 
         aside {
-            width: 260px; /* 固定右側欄寬度 */
-            flex-shrink: 0; /* 防止被左側擠壓 */
+            width: 260px;
+            flex-shrink: 0;
             display: flex;
             flex-direction: column;
             gap: 25px;
         }
 
-        /* 貼文卡片與內文預覽漸層透明 */
+        /* Interactive Post Cards */
         .post-card {
             background: rgba(0, 0, 0, 0.01);
             border: 1px solid var(--border-muted);
@@ -180,34 +180,32 @@
             letter-spacing: -0.3px;
         }
 
-        /* 內容預覽區：高度限制與進階漸層透明遮罩 */
+        /* Content Masking Preview Layer */
         .content-preview {
             font-size: 15px;
             line-height: 1.6;
             color: rgba(0, 0, 0, 0.8);
-            max-height: 120px; /* 限制預覽高度 */
+            max-height: 120px;
             overflow: hidden;
             position: relative;
-            
-            /* 讓文字向下逐漸變透明，達成越後面越透明、最後幾乎透明的視覺效果 */
             -webkit-mask-image: linear-gradient(to bottom, #000000 50%, rgba(0, 0, 0, 0.3) 80%, transparent 100%);
             mask-image: linear-gradient(to bottom, #000000 50%, rgba(0, 0, 0, 0.3) 80%, transparent 100%);
         }
 
         .content-preview img {
-            display: none; /* 預覽時隱藏貼文圖片 */
+            display: none;
         }
 
-        /* 右側索引目錄 */
+        /* Right Navigation Index Tree */
         .sidebar-box {
             border: 1px solid var(--border-muted);
             border-radius: 12px;
             padding: 20px;
             background: rgba(0, 0, 0, 0.005);
             position: sticky;
-            top: 40px; /* 滾動時固定目錄 */
+            top: 40px;
             box-sizing: border-box;
-            width: 100%; /* 撐滿 aside 的 260px 寬度且不變更 */
+            width: 100%;
         }
 
         .sidebar-title {
@@ -229,29 +227,30 @@
             color: var(--text-main);
             text-decoration: none;
             font-size: 14px;
-            opacity: 0; /* 配合動畫初始隱藏 */
-            transform: translateY(10px); /* 配合動畫初始下移 */
+            opacity: 0;
+            transform: translateY(10px);
             animation: fadeInToc 0.5s var(--ease-premium) forwards;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis; /* 太長自動補 ... */
+            text-overflow: ellipsis;
             display: block;
             width: 100%;
             box-sizing: border-box;
-            transition: opacity 0.2s ease, transform 0.2s ease;
+            /* Added smooth transitions for 3D shifts */
+            transition: opacity 0.3s var(--ease-premium), transform 0.3s var(--ease-premium);
         }
         
-        /* Index Tree 往下延伸的淡入動態效果 */
         @keyframes fadeInToc {
             to { opacity: 0.6; transform: translateY(0); }
         }
 
+        /* Glides slightly forward with a 3D layer translation instead of snappy displacement */
         .toc-item:hover {
-            opacity: 1 !important; /* 覆蓋動畫結束後的不透明度 */
-            transform: translateX(4px) !important;
+            opacity: 1 !important;
+            transform: translate3d(6px, 0, 0) !important;
         }
 
-        /* 底部獨立狀態欄（強制顯示在最底下） */
+        /* Universal System Status Bar */
         .footer-status-container {
             width: 100%;
             max-width: 1000px;
@@ -262,13 +261,12 @@
         }
 
         .footer-status {
-            display: inline-block; /* 寬度自適應字體長度 */
+            display: inline-block;
             padding: 4px 12px;
             font-size: 13px;
             font-weight: 600;
             letter-spacing: 1px;
             color: var(--text-main);
-            /* 優雅的白底流光動畫 */
             background: linear-gradient(90deg, rgba(0,0,0,0) 25%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0) 75%);
             background-size: 200% 100%;
             animation: loadingShimmer 2s infinite linear;
@@ -279,7 +277,7 @@
             100% { background-position: -200% 0; }
         }
 
-        /* --- 全螢幕沉浸檢視視窗 (Modal) --- */
+        /* --- Immersive View Overlay Modal --- */
         .modern-modal {
             display: none;
             position: fixed;
@@ -292,8 +290,6 @@
             box-sizing: border-box;
             padding: 80px 20px;
             overflow-y: auto;
-            
-            /* 進場動畫 */
             opacity: 0;
             transform: translateY(20px) scale(0.99);
             transition: transform 0.4s var(--ease-premium), opacity 0.4s var(--ease-premium);
@@ -336,7 +332,6 @@
             transform: rotate(90deg);
         }
 
-        /* 全螢幕視窗內的真實完整樣式（移除透明遮罩與高度限制） */
         .modal-body .full-content {
             display: block;
             color: var(--text-main);
@@ -365,10 +360,10 @@
             line-height: 1.3;
         }
 
-        /* 手機排版優化 */
+        /* Mobile Fluid Breakpoints */
         @media(max-width:768px){
             .main-layout { flex-direction: column; gap: 30px; }
-            aside { display: none; } /* 手機版隱藏目錄以騰出空間 */
+            aside { display: none; } 
             .close-btn { top: 20px; right: 20px; width: 36px; height: 36px; font-size: 14px; }
             body { padding-top: 20px; }
         }
@@ -377,7 +372,7 @@
 <body>
 
     <header>
-        <h1 onclick="location.reload()">HEVLOG DEV LOG</h1>
+        <h1 onclick="location.reload()">Velatum Newsroom</h1>
     </header>
 
     <div class="search-box">
@@ -410,10 +405,11 @@
     </div>
 
     <script>
-        const C={U:'Isvxs',R:'HevBlog',B:'main',S:5},db={a:[],f:[],p:0,b:!1};
+        // Target Routing configured for Isvxs/Velatum-Newsroom
+        const C={U:'Isvxs',R:'Velatum-Newsroom',B:'main',S:5},db={a:[],f:[],p:0,b:!1};
         const $=(id)=>document.getElementById(id),cnt=$('C'),lod=$('L'),toc=$('T');
 
-        // 初始化與安全檢測
+        // Initialization and Environment Integrity Controls
         async function init(){
             try {
                 const statusRes = await fetch('status.json?t=' + Date.now());
@@ -432,14 +428,17 @@
                     }
                 }
             } catch(e) {
-                console.log("Status check bypassed.");
+                console.log("Status validation check bypassed.");
             }
 
             try{
                 lod.innerText="CONNECTING SERVER...";
                 const r=await(await fetch(`https://api.github.com/repos/${C.U}/${C.R}/git/trees/${C.B}?recursive=1`)).json();
+                
+                // Filtering files originating strictly from the 'posts/' manifest directory
                 db.a=r.tree.filter(i=>i.path.startsWith('posts/')&&i.path.endsWith('.json'))
                     .map(i=>({s:i.sha,n:i.path.split('/').pop(),u:`https://cdn.jsdelivr.net/gh/${C.U}/${C.R}@${C.B}/${i.path}`})).reverse();
+                
                 db.f=[...db.a];
                 load();
             }catch(e){
@@ -449,7 +448,7 @@
             window.onscroll=()=>{if(innerHeight+scrollY>=document.body.offsetHeight-400)load()};
         }
 
-        // 分頁加載貼文
+        // Lazy Loading Chunk Engines
         async function load(){
             if(db.b||db.p>=db.f.length)return;
             db.b=!0;
@@ -465,21 +464,18 @@
                     const a=document.createElement('article');
                     a.className='post-card';
                     a.style.animationDelay = `${cardDelay}s`;
-
                     a.onclick = () => openPost(p);
 
-                    // 內文放入帶有漸層遮罩的預覽容器內
                     a.innerHTML=`<div class="meta">${p.category||'GENERAL'} // ${p.date}</div>
                                  <h2>${p.title}</h2>
                                  <div class="content-preview">${p.content}</div>`;
                     cnt.appendChild(a);
                     
-                    // 右側目錄清單
+                    // Render dynamic right side link nodes
                     const t=document.createElement('a');
                     t.className='toc-item';
                     t.innerText=p.title;
                     t.href="#";
-                    // 讓目錄也有向下的梯隊延伸動畫
                     t.style.animationDelay = `${cardDelay}s`;
                     
                     t.onclick=(e)=>{
@@ -496,7 +492,7 @@
             lod.innerText=db.p>=db.f.length?"EOF // LOG ENDED":"SCROLL FOR MORE LOGS";
         }
 
-        // 搜尋引擎
+        // Search Index Engine Filters
         const doSearch=()=>{
             cnt.innerHTML=toc.innerHTML='';db.p=0;
             const v=$('S').value.toLowerCase().trim();
@@ -511,10 +507,9 @@
             load();
         };
 
-        // --- 全螢幕高級彈出與還原邏輯 ---
+        // --- Immersive Modal Handlers ---
         function openPost(postData) {
             const modal = $('win-modal');
-            // 全螢幕展示時，改用 full-content 類別，移除所有限制與遮罩
             $('win-body-content').innerHTML = `
                 <div class="meta" style="margin-bottom: 30px; border-bottom: 1px solid var(--border-muted); padding-bottom: 15px;">
                     ${postData.category || 'GENERAL'} // TIMESTAMP: ${postData.date}
